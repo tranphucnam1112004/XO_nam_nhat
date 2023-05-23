@@ -39,11 +39,15 @@ int main (){
     int q;
     cout<<"Nhap vao so van ban muon choi: ";
     cin>>q;
+    system("cls");
     cout<<endl;
     for(times = 1; times<=q; times++){
         player = "X";
+        //cout<<"\n\n\n";
         if(times != 1){
             cout<<"\n\n";
+        }else{
+            cout<<"\n\n\n";
         }
         title();
         //----------khởi tạo các giá trị ban đầu của bàn cờ----------
