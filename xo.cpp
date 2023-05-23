@@ -101,7 +101,7 @@ int whereY()
 	return -1;
 }
 void title(){
-    int align = 72;
+    int align = 74;
     string in_ans, out_ans;
     for(int k=1; k<=12; k++){
         char in_char = 175, out_char = 174;
@@ -120,7 +120,7 @@ void turn(){
     //gotoXY(0, 30);
     COORD curPos = { 0, 30 };
 	SetConsoleCursorPosition(posAt, curPos);
-    cout<<setw(95)<<"Luot cua ";
+    cout<<setw(97)<<"Luot cua ";
     if(player == "X"){
         SetConsoleTextAttribute(posAt, 4);
     }else{
