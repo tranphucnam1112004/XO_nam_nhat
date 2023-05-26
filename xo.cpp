@@ -3,18 +3,18 @@
 #include"windows.h"
 using namespace std;
 //--------các biến chính----------
-int n=11, x=62, y=7, times, x_user=0, y_user=0;
+int n=11, x=62, y=7, times, x_user=0, y_user=0, gameplay;
 int x_start = x, y_start = y;
 string player = "X";
 string user_input[11][11];
 bool gameover = false, enter = false;
 map<string, int>mp = {{"X",0}, {"O",0}};
 
-
 //----------------Khai báo nguyên hàm-----------------------------
 //-----------Hàm phụ-------------------
 int whereX();
 int whereY();
+void gotoXY(short x, short y);
 void title();
 void turn();
 
@@ -23,65 +23,48 @@ bool checkx(); //check cột
 bool checky(); // check hàng
 bool checkmaindia(); // check chéo chính
 bool checkantidia(); // check chéo phụ
-
+bool block_checkx();
+bool block_checky();
+bool block_checkmaindia();
+bool block_checkantidia();
+bool block();
 //-----------Hàm chính----------------
+void bot_turn();
 void control();
 void draw(string value); // vẽ bàn cờ với giá trị value vừa được nhập
 void change(); // đổi người chơi
 void start_value(); // khởi tạo giá trị ban đầu của bàn cờ
 void check_ans(); // kiểm tra thắng thua
+void bot_turn();
+void gameplay1();
+void gameplay2();
 
 //------------main---------
 int main (){
     HANDLE posAt;
     posAt = GetStdHandle(STD_OUTPUT_HANDLE);
-    
-    int q;
-    cout<<"Nhap vao so van ban muon choi: ";
-    cin>>q;
-    system("cls");
-    cout<<endl;
-    for(times = 1; times<=q; times++){
-        player = "X";
-        //cout<<"\n\n\n";
-        if(times != 1){
-            cout<<"\n\n";
-        }else{
-            cout<<"\n\n\n";
-        }
-        title();
-        //----------khởi tạo các giá trị ban đầu của bàn cờ----------
-        start_value();
-        //----------Hiển thị bàn cờ trước khi bắt đầu----------------
-        draw(" ");
-        COORD curPos = { (short int)x, (short int)y };
-	    SetConsoleCursorPosition(posAt, curPos);
-        gameover = false;
-        //----------Bắt đầu chơi-----------------------
-        int cnt_turn = 1;
-        while(cnt_turn <= n*n && !gameover){
-            turn();
-            COORD curPos = { (short int)x, (short int)y };
-	        SetConsoleCursorPosition(posAt, curPos);
-            cnt_turn ++;
-            while(!enter){
-                control();
+    while(true){
+        system("cls");
+        SetConsoleTextAttribute(posAt, 7);
+        cout<<"----Menu---"<<endl;
+        cout<<"1.Nguoi voi nguoi\n2.Nguoi voi may"<<endl;
+        cout<<"Chon che do ban muon choi: ";
+        do{
+            cin>>gameplay;
+            if(gameplay<1||gameplay>2){
+                cout<<"Lua chon cua ban khong co, vui long chon lai: ";
             }
-            enter = false;
-            check_ans();
-            change();
+        }while(gameplay<1||gameplay>2);
+        system("cls");
+        switch(gameplay){
+            case 1:{
+                gameplay1();
+            }break;
+            case 2:{
+                gameplay2();
+            }break;
         }
-        cout<<"\n\n";
     }
-    int align = 72;
-    string in_ans, out_ans;
-    for(int k=1; k<=12; k++){
-        char in_char = 175, out_char = 174;
-        in_ans+=in_char;
-        out_ans+=out_char;
-    }
-    cout<<setw(align)<<" ";
-    cout<<in_ans<<" X   "<<mp["X"]<<":"<<mp["O"]<<"   O "<<out_ans<<endl;
     return 0;
 }
 
@@ -99,6 +82,12 @@ int whereY()
 	if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &posAt))
 		return posAt.dwCursorPosition.Y;
 	return -1;
+}
+void gotoXY(short x, short y){
+    HANDLE posAt;
+    posAt = GetStdHandle(STD_OUTPUT_HANDLE);
+    COORD pos_cur = {x,y};
+    SetConsoleCursorPosition(posAt, pos_cur);
 }
 void title(){
     int align = 74;
@@ -215,8 +204,944 @@ bool checkantidia(){
         return false;
     }
 }
-
+bool block(){
+    int x_input, y_input;
+    int pos;
+    string str_x, str_y, str_main, str_anti;
+    string str_x2, str_y2, str_main2, str_anti2;
+    for(int i=0; i<n; i++){
+        for(int j=0; j<n; j++){
+            if(user_input[i][j] != " "){
+                str_x = "";
+                str_y = "";
+                str_main = "";
+                str_anti = "";
+                str_x2 = "";
+                str_y2 = "";
+                str_main2 = "";
+                str_anti2 = "";
+                x_input = j, y_input = i;
+                for(int k=0 ;k<6; k++){
+                    if(y_input+k < n){
+                        str_x += user_input[y_input+k][x_input];
+                    }
+                    if(x_input+k < n){
+                        str_y += user_input[y_input][x_input+k];
+                    }
+                    if(x_input+k < n && y_input+k<n){
+                        str_main += user_input[y_input+k][x_input+k];
+                    }
+                    if(x_input-k >= 0 && y_input+k<n){
+                        str_anti += user_input[y_input+k][x_input-k];
+                    }
+                    if(y_input-k >= 0){
+                        str_x2 += user_input[y_input-k][x_input];
+                    }
+                    if(x_input-k >= 0){
+                        str_y2 += user_input[y_input][x_input-k];
+                    }
+                    if(x_input-k >= 0 && y_input-k >= 0){
+                        str_main2 += user_input[y_input-k][x_input-k];
+                    }
+                    if(x_input+k < n && y_input-k >= 0){
+                        str_anti2 += user_input[y_input-k][x_input+k];
+                    }
+                }
+                // tim "XXXX "
+                if(str_x.find("XXXX ") != string::npos){
+                    pos = str_x.find("XXXX ");
+                    y_input += (pos + 4);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("XXXX ") != string::npos){
+                    pos = str_y.find("XXXX ");
+                    x_input += (pos + 4);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("XXXX ") != string::npos){
+                    pos = str_main.find("XXXX ");
+                    x_input += (pos + 4);
+                    y_input += (pos + 4);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("XXXX ") != string::npos){
+                    pos = str_anti.find("XXXX ");
+                    x_input -= (pos + 4);
+                    y_input += (pos + 4);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("XXXX ") != string::npos){
+                    pos = str_x2.find("XXXX ");
+                    y_input -= (pos + 4);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("XXXX ") != string::npos){
+                    pos = str_y2.find("XXXX ");
+                    x_input -= (pos + 4);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("XXXX ") != string::npos){
+                    pos = str_main2.find("XXXX ");
+                    x_input -= (pos + 4);
+                    y_input -= (pos + 4);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("XXXX ") != string::npos){
+                    pos = str_anti2.find("XXXX ");
+                    x_input += (pos + 4);
+                    y_input -= (pos + 4);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim " XXXX"
+                else if(str_x.find(" XXXX") != string::npos){
+                    pos = str_x.find(" XXXX");
+                    y_input += (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find(" XXXX") != string::npos){
+                    pos = str_y.find(" XXXX");
+                    x_input += (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find(" XXXX") != string::npos){
+                    pos = str_main.find(" XXXX");
+                    x_input += (pos);
+                    y_input += (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find(" XXXX") != string::npos){
+                    pos = str_anti.find(" XXXX");
+                    x_input -= (pos);
+                    y_input += (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find(" XXXX") != string::npos){
+                    pos = str_x2.find(" XXXX");
+                    y_input -= (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find(" XXXX") != string::npos){
+                    pos = str_y2.find(" XXXX");
+                    x_input -= (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find(" XXXX") != string::npos){
+                    pos = str_main2.find(" XXXX");
+                    x_input -= (pos);
+                    y_input -= (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find(" XXXX") != string::npos){
+                    pos = str_anti2.find(" XXXX");
+                    x_input += (pos);
+                    y_input -= (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "XXX X"
+                else if(str_x.find("XXX X") != string::npos){
+                    pos = str_x.find("XXX X");
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("XXX X") != string::npos){
+                    pos = str_y.find("XXX X");
+                    x_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("XXX X") != string::npos){
+                    pos = str_main.find("XXX X");
+                    x_input += (pos + 3);
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("XXX X") != string::npos){
+                    pos = str_anti.find("XXX X");
+                    x_input -= (pos + 3);
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("XXX X") != string::npos){
+                    pos = str_x2.find("XXX X");
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("XXX X") != string::npos){
+                    pos = str_y2.find("XXX X");
+                    x_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("XXX X") != string::npos){
+                    pos = str_main2.find("XXX X");
+                    x_input -= (pos + 3);
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("XXX X") != string::npos){
+                    pos = str_anti2.find("XXX X");
+                    x_input += (pos + 3);
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "XX XX"
+                else if(str_x.find("XX XX") != string::npos){
+                    pos = str_x.find("XX XX");
+                    y_input += (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("XX XX") != string::npos){
+                    pos = str_y.find("XX XX");
+                    x_input += (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("XX XX") != string::npos){
+                    pos = str_main.find("XX XX");
+                    x_input += (pos + 2);
+                    y_input += (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("XX XX") != string::npos){
+                    pos = str_anti.find("XX XX");
+                    x_input -= (pos + 2);
+                    y_input += (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("XX XX") != string::npos){
+                    pos = str_x2.find("XX XX");
+                    y_input -= (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("XX XX") != string::npos){
+                    pos = str_y2.find("XX XX");
+                    x_input -= (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("XX XX") != string::npos){
+                    pos = str_main2.find("XX XX");
+                    x_input -= (pos + 2);
+                    y_input -= (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("XX XX") != string::npos){
+                    pos = str_anti2.find("XX XX");
+                    x_input += (pos + 2);
+                    y_input -= (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "X XXX"
+                else if(str_x.find("X XXX") != string::npos){
+                    pos = str_x.find("X XXX");
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("X XXX") != string::npos){
+                    pos = str_y.find("X XXX");
+                    x_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("X XXX") != string::npos){
+                    pos = str_main.find("X XXX");
+                    x_input += (pos + 1);
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("X XXX") != string::npos){
+                    pos = str_anti.find("X XXX");
+                    x_input -= (pos + 1);
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("X XXX") != string::npos){
+                    pos = str_x2.find("X XXX");
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("X XXX") != string::npos){
+                    pos = str_y2.find("X XXX");
+                    x_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("X XXX") != string::npos){
+                    pos = str_main2.find("X XXX");
+                    x_input -= (pos + 1);
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("X XXX") != string::npos){
+                    pos = str_anti2.find("X XXX");
+                    x_input += (pos + 1);
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "XXX  "
+                else if(str_x.find("XXX  ") != string::npos){
+                    pos = str_x.find("XXX  ");
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("XXX  ") != string::npos){
+                    pos = str_y.find("XXX  ");
+                    x_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("XXX  ") != string::npos){
+                    pos = str_main.find("XXX  ");
+                    x_input += (pos + 3);
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("XXX  ") != string::npos){
+                    pos = str_anti.find("XXX  ");
+                    x_input -= (pos + 3);
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("XXX  ") != string::npos){
+                    pos = str_x2.find("XXX  ");
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("XXX  ") != string::npos){
+                    pos = str_y2.find("XXX  ");
+                    x_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("XXX  ") != string::npos){
+                    pos = str_main2.find("XXX  ");
+                    x_input -= (pos + 3);
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("XXX  ") != string::npos){
+                    pos = str_anti2.find("XXX  ");
+                    x_input += (pos + 3);
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "  XXX"
+                else if(str_x.find("  XXX") != string::npos){
+                    pos = str_x.find("  XXX");
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("  XXX") != string::npos){
+                    pos = str_y.find("  XXX");
+                    x_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("  XXX") != string::npos){
+                    pos = str_main.find("  XXX");
+                    x_input += (pos + 1);
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("  XXX") != string::npos){
+                    pos = str_anti.find("  XXX");
+                    x_input -= (pos + 1);
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("  XXX") != string::npos){
+                    pos = str_x2.find("  XXX");
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("  XXX") != string::npos){
+                    pos = str_y2.find("  XXX");
+                    x_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("  XXX") != string::npos){
+                    pos = str_main2.find("  XXX");
+                    x_input -= (pos + 1);
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("  XXX") != string::npos){
+                    pos = str_anti2.find("  XXX");
+                    x_input += (pos + 1);
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+            }
+            else{
+                str_x = "";
+                str_y = "";
+                str_main = "";
+                str_anti = "";
+                str_x2 = "";
+                str_y2 = "";
+                str_main2 = "";
+                str_anti2 = "";
+                x_input = j, y_input = i;
+                for(int k=0 ;k<6; k++){
+                    if(y_input+k < n){
+                        str_x += user_input[y_input+k][x_input];
+                    }
+                    if(x_input+k < n){
+                        str_y += user_input[y_input][x_input+k];
+                    }
+                    if(x_input+k < n && y_input+k<n){
+                        str_main += user_input[y_input+k][x_input+k];
+                    }
+                    if(x_input-k >= 0 && y_input+k<n){
+                        str_anti += user_input[y_input+k][x_input-k];
+                    }
+                    if(y_input-k >= 0){
+                        str_x2 += user_input[y_input-k][x_input];
+                    }
+                    if(x_input-k >= 0){
+                        str_y2 += user_input[y_input][x_input-k];
+                    }
+                    if(x_input-k >= 0 && y_input-k >= 0){
+                        str_main2 += user_input[y_input-k][x_input-k];
+                    }
+                    if(x_input+k < n && y_input-k >= 0){
+                        str_anti2 += user_input[y_input-k][x_input+k];
+                    }
+                }
+                // tim "XXXX "
+                if(str_x.find("XXXX ") != string::npos){
+                    pos = str_x.find("XXXX ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("XXXX ") != string::npos){
+                    pos = str_y.find("XXXX ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("XXXX ") != string::npos){
+                    pos = str_main.find("XXXX ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("XXXX ") != string::npos){
+                    pos = str_anti.find("XXXX ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("XXXX ") != string::npos){
+                    pos = str_x2.find("XXXX ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("XXXX ") != string::npos){
+                    pos = str_y2.find("XXXX ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("XXXX ") != string::npos){
+                    pos = str_main2.find("XXXX ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("XXXX ") != string::npos){
+                    pos = str_anti2.find("XXXX ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim " XXXX"
+                else if(str_x.find(" XXXX") != string::npos){
+                    pos = str_x.find(" XXXX");
+                    y_input += (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find(" XXXX") != string::npos){
+                    pos = str_y.find(" XXXX");
+                    x_input += (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find(" XXXX") != string::npos){
+                    pos = str_main.find(" XXXX");
+                    x_input += (pos);
+                    y_input += (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find(" XXXX") != string::npos){
+                    pos = str_anti.find(" XXXX");
+                    x_input -= (pos);
+                    y_input += (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find(" XXXX") != string::npos){
+                    pos = str_x2.find(" XXXX");
+                    y_input -= (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find(" XXXX") != string::npos){
+                    pos = str_y2.find(" XXXX");
+                    x_input -= (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find(" XXXX") != string::npos){
+                    pos = str_main2.find(" XXXX");
+                    x_input -= (pos);
+                    y_input -= (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find(" XXXX") != string::npos){
+                    pos = str_anti2.find(" XXXX");
+                    x_input += (pos);
+                    y_input -= (pos);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "XXX X"
+                else if(str_x.find("XXX X") != string::npos){
+                    pos = str_x.find("XXX X");
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("XXX X") != string::npos){
+                    pos = str_y.find("XXX X");
+                    x_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("XXX X") != string::npos){
+                    pos = str_main.find("XXX X");
+                    x_input += (pos + 3);
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("XXX X") != string::npos){
+                    pos = str_anti.find("XXX X");
+                    x_input -= (pos + 3);
+                    y_input += (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("XXX X") != string::npos){
+                    pos = str_x2.find("XXX X");
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("XXX X") != string::npos){
+                    pos = str_y2.find("XXX X");
+                    x_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("XXX X") != string::npos){
+                    pos = str_main2.find("XXX X");
+                    x_input -= (pos + 3);
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("XXX X") != string::npos){
+                    pos = str_anti2.find("XXX X");
+                    x_input += (pos + 3);
+                    y_input -= (pos + 3);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "XX XX"
+                else if(str_x.find("XX XX") != string::npos){
+                    pos = str_x.find("XX XX");
+                    y_input += (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("XX XX") != string::npos){
+                    pos = str_y.find("XX XX");
+                    x_input += (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("XX XX") != string::npos){
+                    pos = str_main.find("XX XX");
+                    x_input += (pos + 2);
+                    y_input += (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("XX XX") != string::npos){
+                    pos = str_anti.find("XX XX");
+                    x_input -= (pos + 2);
+                    y_input += (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("XX XX") != string::npos){
+                    pos = str_x2.find("XX XX");
+                    y_input -= (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("XX XX") != string::npos){
+                    pos = str_y2.find("XX XX");
+                    x_input -= (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("XX XX") != string::npos){
+                    pos = str_main2.find("XX XX");
+                    x_input -= (pos + 2);
+                    y_input -= (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("XX XX") != string::npos){
+                    pos = str_anti2.find("XX XX");
+                    x_input += (pos + 2);
+                    y_input -= (pos + 2);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "X XXX"
+                else if(str_x.find("X XXX") != string::npos){
+                    pos = str_x.find("X XXX");
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("X XXX") != string::npos){
+                    pos = str_y.find("X XXX");
+                    x_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("X XXX") != string::npos){
+                    pos = str_main.find("X XXX");
+                    x_input += (pos + 1);
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("X XXX") != string::npos){
+                    pos = str_anti.find("X XXX");
+                    x_input -= (pos + 1);
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("X XXX") != string::npos){
+                    pos = str_x2.find("X XXX");
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("X XXX") != string::npos){
+                    pos = str_y2.find("X XXX");
+                    x_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("X XXX") != string::npos){
+                    pos = str_main2.find("X XXX");
+                    x_input -= (pos + 1);
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("X XXX") != string::npos){
+                    pos = str_anti2.find("X XXX");
+                    x_input += (pos + 1);
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "XXX  "
+                else if(str_x.find("XXX  ") != string::npos){
+                    pos = str_x.find("XXX  ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("XXX  ") != string::npos){
+                    pos = str_y.find("XXX  ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("XXX  ") != string::npos){
+                    pos = str_main.find("XXX  ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("XXX  ") != string::npos){
+                    pos = str_anti.find("XXX  ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("XXX  ") != string::npos){
+                    pos = str_x2.find("XXX  ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("XXX  ") != string::npos){
+                    pos = str_y2.find("XXX  ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("XXX  ") != string::npos){
+                    pos = str_main2.find("XXX  ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti2.find("XXX  ") != string::npos){
+                    pos = str_anti2.find("XXX  ");
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                // tim "  XXX"
+                else if(str_x.find("  XXX") != string::npos){
+                    pos = str_x.find("  XXX");
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y.find("  XXX") != string::npos){
+                    pos = str_y.find("  XXX");
+                    x_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main.find("  XXX") != string::npos){
+                    pos = str_main.find("  XXX");
+                    x_input += (pos + 1);
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("  XXX") != string::npos){
+                    pos = str_anti.find("  XXX");
+                    x_input -= (pos + 1);
+                    y_input += (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_x2.find("  XXX") != string::npos){
+                    pos = str_x2.find("  XXX");
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_y2.find("  XXX") != string::npos){
+                    pos = str_y2.find("  XXX");
+                    x_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_main2.find("  XXX") != string::npos){
+                    pos = str_main2.find("  XXX");
+                    x_input -= (pos + 1);
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+                else if(str_anti.find("  XXX") != string::npos){
+                    pos = str_anti2.find("  XXX");
+                    x_input += (pos + 1);
+                    y_input -= (pos + 1);
+                    x_user = x_input;
+                    y_user = y_input;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+bool add(){
+    gotoXY(0,0);
+    cout<<"HELLO";
+    return true;
+}
 //---------Hàm chính-------------------------------
+void bot_turn(){
+    turn();
+    HANDLE posAt;
+    posAt = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(posAt, 2);
+    change();
+    if(block()){
+        user_input[y_user][x_user] = player;
+        x = 62+6*x_user;
+        y = 7+2*y_user;
+        gotoXY(x, y);
+        cout<<player;
+        return;
+    }else{
+        add();
+    }
+}
 void control(){
     HANDLE posAt;
     posAt = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -397,5 +1322,61 @@ void check_ans(){
         gameover = true;
         system("cls");
         SetConsoleTextAttribute(change_color, 7);
+    }
+}
+void gameplay1(){
+    HANDLE posAt;
+    posAt = GetStdHandle(STD_OUTPUT_HANDLE);
+    player = "X";
+    cout<<"\n\n\n\n";
+    title();
+    //----------khởi tạo các giá trị ban đầu của bàn cờ----------
+    start_value();
+    //----------Hiển thị bàn cờ trước khi bắt đầu----------------
+    draw(" ");
+    COORD curPos = { (short int)x, (short int)y };
+    SetConsoleCursorPosition(posAt, curPos);
+    gameover = false;
+    //----------Bắt đầu chơi-----------------------
+    int cnt_turn = 1;
+    while(cnt_turn <= n*n && !gameover){
+        turn();
+        COORD curPos = { (short int)x, (short int)y };
+        SetConsoleCursorPosition(posAt, curPos);
+        cnt_turn ++;
+        while(!enter){
+            control();
+        }
+        enter = false;
+        check_ans();
+        change();
+    }
+}
+void gameplay2(){
+    HANDLE posAt;
+    posAt = GetStdHandle(STD_OUTPUT_HANDLE);
+    player = "X";
+    cout<<"\n\n\n\n";
+    title();
+    //----------khởi tạo các giá trị ban đầu của bàn cờ----------
+    start_value();
+    //----------Hiển thị bàn cờ trước khi bắt đầu----------------
+    draw(" ");
+    COORD curPos = { (short int)x, (short int)y };
+    SetConsoleCursorPosition(posAt, curPos);
+    gameover = false;
+    int cnt_turn = 1;
+    while(cnt_turn <= n*n && !gameover){
+        turn();
+        COORD curPos = { (short int)x, (short int)y };
+        SetConsoleCursorPosition(posAt, curPos);
+        cnt_turn ++;
+        while(!enter){
+            control();
+        }
+        enter = false;
+        check_ans();
+        bot_turn();
+        change();
     }
 }
