@@ -23,10 +23,6 @@ bool checkx(); //check cột
 bool checky(); // check hàng
 bool checkmaindia(); // check chéo chính
 bool checkantidia(); // check chéo phụ
-bool block_checkx();
-bool block_checky();
-bool block_checkmaindia();
-bool block_checkantidia();
 bool block();
 //-----------Hàm chính----------------
 void bot_turn();
